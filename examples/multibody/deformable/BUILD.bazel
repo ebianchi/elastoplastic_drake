@@ -426,6 +426,35 @@ drake_cc_binary(
 )
 
 drake_cc_binary(
+    name = "elastoplastic",
+    srcs = [
+        "elastoplastic.cc",
+    ],
+    add_test_rule = 1,
+    data = [
+        "@drake_models//:allegro_hand_description",
+        "//examples/multibody/deformable/parameters:yamls",
+    ],
+    test_rule_args = [
+        "-simulation_time=0.1",
+        "-realtime_rate=0.0",
+    ],
+    deps = [
+        "//geometry:drake_visualizer",
+        "//geometry:scene_graph",
+        "//multibody/parsing",
+        "//multibody/plant",
+        "//systems/analysis:simulator",
+        "//systems/framework:diagram",
+        "@gflags",
+        "//systems/primitives:matrix_gain",
+        "//geometry",
+        "//visualization",
+        "//examples/multibody/deformable/parameters:elastoplastic_sim_params",
+    ],
+)
+
+drake_cc_binary(
     name = "shake",
     srcs = [
         "shake.cc",

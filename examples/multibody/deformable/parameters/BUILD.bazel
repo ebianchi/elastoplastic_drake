@@ -1,0 +1,16 @@
+load("//tools/skylark:drake_cc.bzl", "drake_cc_library")
+
+drake_cc_library(
+    name = "elastoplastic_sim_params",
+    hdrs = ["elastoplastic_sim_params.h"],
+    deps = [
+        "//common/yaml:yaml",
+    ],
+    visibility = ["//visibility:public"],
+)
+
+filegroup(
+    name = "yamls",
+    srcs = glob(["*.yaml"]),
+    visibility = ["//visibility:public"],
+)
