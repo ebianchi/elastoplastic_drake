@@ -41,6 +41,8 @@ ALL_LCM_SRCS = [
     "lcmt_point_cloud_field.lcm",
     "lcmt_point_pair_contact_info_for_viz.lcm",
     "lcmt_quaternion.lcm",
+    "lcmt_robot_input.lcm",
+    "lcmt_robot_output.lcm",
     "lcmt_robot_plan.lcm",
     "lcmt_robot_state.lcm",
     "lcmt_schunk_wsg_command.lcm",

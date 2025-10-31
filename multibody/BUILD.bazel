@@ -1,4 +1,5 @@
 load("//tools/lint:lint.bzl", "add_lint_tests")
+load("//tools/skylark:drake_cc.bzl", "drake_cc_library")
 
 package(default_visibility = ["//visibility:public"])
 
@@ -7,6 +8,20 @@ filegroup(
     srcs = [
         "models/box.urdf",
         "models/box_small.urdf",
+    ],
+)
+
+drake_cc_library(
+    name = "utils",
+    srcs = [
+        "multibody_utils.cc",
+    ],
+    hdrs = [
+        "multibody_utils.h",
+    ],
+    deps = [
+        "@drake//:drake_shared_library",
+        "//multibody/plant",
     ],
 )
 

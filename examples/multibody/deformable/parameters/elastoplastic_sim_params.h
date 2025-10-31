@@ -9,7 +9,7 @@ struct ElastoPlasticSimParams {
   double dt;
   double realtime_rate;
   double actuator_delay;
-  double franka_publish_rate;
+  double robot_publish_rate;
   double object_publish_rate;
   bool visualize_drake_sim;
   bool publish_efforts;
@@ -29,7 +29,7 @@ struct ElastoPlasticSimParams {
     a->Visit(DRAKE_NVP(dt));
     a->Visit(DRAKE_NVP(realtime_rate));
     a->Visit(DRAKE_NVP(actuator_delay));
-    a->Visit(DRAKE_NVP(franka_publish_rate));
+    a->Visit(DRAKE_NVP(robot_publish_rate));
     a->Visit(DRAKE_NVP(object_publish_rate));
     a->Visit(DRAKE_NVP(visualize_drake_sim));
     a->Visit(DRAKE_NVP(publish_efforts));

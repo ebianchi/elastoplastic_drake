@@ -61,6 +61,23 @@ drake_cc_library(
     ],
 )
 
+drake_cc_library(
+    name = "robot_lcm_systems",
+    srcs = ["robot_lcm_systems.cc"],
+    hdrs = [
+        "robot_lcm_systems.h",
+    ],
+    deps = [
+        "//lcmtypes:lcmt_robot",
+        "//multibody:utils",
+        "//systems/framework:vector",
+        "//systems/primitives",
+        "//multibody/plant",
+        "@drake//:drake_shared_library",
+        "@lcm",
+    ],
+)
+
 drake_cc_binary(
     name = "deformable_torus",
     srcs = [
@@ -446,11 +463,15 @@ drake_cc_binary(
         "//multibody/plant",
         "//systems/analysis:simulator",
         "//systems/framework:diagram",
+        "//systems/lcm",
+        "//lcm",
         "@gflags",
-        "//systems/primitives:matrix_gain",
+        "//examples/multibody/deformable:robot_lcm_systems",
+        "//systems/primitives:subvector_pass_through",
         "//geometry",
         "//visualization",
         "//examples/multibody/deformable/parameters:elastoplastic_sim_params",
+        "//examples/multibody/deformable/parameters:elastoplastic_lcm_params",
     ],
 )
 

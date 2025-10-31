@@ -68,12 +68,14 @@ drake_cc_library(
         "subvector.cc",
         "supervector.cc",
         "vector_base.cc",
+        "timestamped_vector.cc",
     ],
     hdrs = [
         "basic_vector.h",
         "subvector.h",
         "supervector.h",
         "vector_base.h",
+        "timestamped_vector.h",
     ],
     deps = [
         "//common:default_scalars",

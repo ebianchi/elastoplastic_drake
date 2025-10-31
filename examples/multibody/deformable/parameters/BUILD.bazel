@@ -9,6 +9,15 @@ drake_cc_library(
     visibility = ["//visibility:public"],
 )
 
+drake_cc_library(
+    name = "elastoplastic_lcm_params",
+    hdrs = ["elastoplastic_lcm_params.h"],
+    deps = [
+        "//common/yaml:yaml",
+    ],
+    visibility = ["//visibility:public"],
+)
+
 filegroup(
     name = "yamls",
     srcs = glob(["*.yaml"]),

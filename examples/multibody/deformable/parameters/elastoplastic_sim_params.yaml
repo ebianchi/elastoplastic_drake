@@ -1,9 +1,9 @@
 object_model: examples/sampling_c3/urdf/nut/nut.sdf           # TODO @bibit what do we want here?
-franka_publish_rate: 1000
+robot_publish_rate: 1000
 object_publish_rate: 10
 actuator_delay: 0.000
 
-visualize_drake_sim: true
+visualize_drake_sim: false
 publish_efforts: true
 
 dt: 0.01

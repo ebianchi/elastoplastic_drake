@@ -188,6 +188,15 @@ drake_lcm_cc_library(
 )
 
 drake_lcm_cc_library(
+    name = "lcmt_robot",
+    lcm_package = "drake",
+    lcm_srcs = [
+        "lcmt_robot_input.lcm",
+        "lcmt_robot_output.lcm",
+    ],
+)
+
+drake_lcm_cc_library(
     name = "robot_plan",
     lcm_package = "drake",
     lcm_srcs = [

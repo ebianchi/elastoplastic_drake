@@ -6,7 +6,9 @@
 
 #include "drake/common/find_resource.h"
 #include "drake/common/yaml/yaml_io.h"
+#include "drake/examples/multibody/deformable/parameters/elastoplastic_lcm_params.h"
 #include "drake/examples/multibody/deformable/parameters/elastoplastic_sim_params.h"
+#include "drake/examples/multibody/deformable/robot_lcm_systems.h"
 #include "drake/geometry/drake_visualizer.h"
 #include "drake/geometry/meshcat.h"
 #include "drake/geometry/meshcat_point_cloud_visualizer.h"
@@ -14,6 +16,7 @@
 #include "drake/geometry/meshcat_visualizer_params.h"
 #include "drake/geometry/proximity_properties.h"
 #include "drake/geometry/scene_graph.h"
+#include "drake/lcm/drake_lcm.h"
 #include "drake/math/rigid_transform.h"
 #include "drake/multibody/parsing/parser.h"
 #include "drake/multibody/plant/deformable_model.h"
@@ -23,12 +26,16 @@
 #include "drake/systems/framework/diagram.h"
 #include "drake/systems/framework/diagram_builder.h"
 #include "drake/systems/framework/leaf_system.h"
+#include "drake/systems/lcm/lcm_interface_system.h"
+#include "drake/systems/primitives/subvector_pass_through.h"
 #include "drake/visualization/visualization_config.h"
 #include "drake/visualization/visualization_config_functions.h"
 
 DEFINE_bool(write_files, true, "Enable dumping MPM data to files.");
 DEFINE_double(simulation_time, 10.0, "Desired duration of the simulation [s].");
 DEFINE_int32(testcase, 0, "Test Case.");
+DEFINE_string(lcm_url, "udpm://239.255.76.67:7667?ttl=0",
+              "LCM URL with IP, port, and TTL settings");
 
 using drake::geometry::AddContactMaterial;
 using drake::geometry::Box;
@@ -50,6 +57,7 @@ using drake::multibody::Parser;
 using drake::multibody::RigidBody;
 using drake::multibody::SpatialInertia;
 using drake::multibody::gmpm::MpmConfigParams;
+using drake::systems::AddActuationRecieverAndStateSenderLcm;
 using drake::systems::BasicVector;
 using drake::systems::Context;
 using Eigen::Matrix2d;
@@ -65,10 +73,12 @@ namespace drake {
 namespace examples {
 namespace {
 
-static constexpr const char* kHandModel =
+static const std::string kHandModel =
     "package://drake_models/allegro_hand_description/urdf/"
     "allegro_hand_description_right.urdf";
 static const double kDoughRadius = 0.03;
+static const std::string kDiagramFolder =
+    "/mnt/data0/bibit/diagrams/mpm_drake/";
 
 int DoMain() {
   // int DoMain(int argc, char* argv[]) {
@@ -77,6 +87,11 @@ int DoMain() {
       drake::yaml::LoadYamlFile<ElastoPlasticSimParams>(
           drake::FindResource("drake/examples/multibody/deformable/parameters/"
                               "elastoplastic_sim_params.yaml")
+              .get_absolute_path_or_throw());
+  ElastoPlasticLCMChannels lcm_channel_params =
+      drake::yaml::LoadYamlFile<ElastoPlasticLCMChannels>(
+          drake::FindResource("drake/examples/multibody/deformable/parameters/"
+                              "elastoplastic_lcm_params.yaml")
               .get_absolute_path_or_throw());
 
   systems::DiagramBuilder<double> builder;
@@ -97,8 +112,7 @@ int DoMain() {
 
   // Add the hand.
   Parser parser(&plant, &scene_graph);
-  //   ModelInstanceIndex hand_index =
-  parser.AddModelsFromUrl(kHandModel)[0];
+  ModelInstanceIndex hand_index = parser.AddModelsFromUrl(kHandModel)[0];
   Quaterniond hand_quat = {
       sim_params.fixed_base_robot[0], sim_params.fixed_base_robot[1],
       sim_params.fixed_base_robot[2], sim_params.fixed_base_robot[3]};
@@ -143,20 +157,14 @@ int DoMain() {
 
   plant.Finalize();
 
-  /* Add a visualizer that emits LCM messages for visualization. */
-  if (sim_params.visualize_drake_sim) {
-    geometry::DrakeVisualizerParams visualize_params;
-    visualize_params.show_mpm =
-        geometry::DrakeVisualizerParams::ShowMpmOpt::kParticleMpm;
-    auto& visualizer = geometry::DrakeVisualizerd::AddToBuilder(
-        &builder, scene_graph, nullptr, visualize_params);
-
-    // NOTE (changyu): MPM shortcut port shuould be explicit connected for
-    // visualization.
-    builder.Connect(
-        plant.get_output_port(plant.deformable_model().mpm_output_port_index()),
-        visualizer.mpm_input_port());
-  }
+  // Publishing
+  drake::lcm::DrakeLcm drake_lcm(FLAGS_lcm_url);
+  auto lcm =
+      builder.AddSystem<drake::systems::lcm::LcmInterfaceSystem>(&drake_lcm);
+  AddActuationRecieverAndStateSenderLcm(
+      &builder, plant, lcm, lcm_channel_params.robot_input_channel,
+      lcm_channel_params.robot_state_channel, sim_params.robot_publish_rate,
+      hand_index, sim_params.publish_efforts, sim_params.actuator_delay);
 
   // meshcat viz
   auto meshcat = std::make_shared<geometry::Meshcat>();
@@ -184,8 +192,8 @@ int DoMain() {
       diagram->CreateDefaultContext();
 
   // Draw the diagram.
-  std::ignore = std::system("mkdir -p /mnt/data0/bibit/diagrams/mpm_drake/");
-  std::string path = "/mnt/data0/bibit/diagrams/mpm_drake/elastoplastic";
+  std::ignore = std::system(("mkdir -p " + kDiagramFolder).c_str());
+  std::string path = kDiagramFolder + "/elastoplastic";
   std::ofstream out(path);
   out << diagram->GetGraphvizString();
   out.close();

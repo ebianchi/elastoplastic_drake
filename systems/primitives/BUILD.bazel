@@ -35,6 +35,7 @@ drake_cc_package_library(
         ":saturation",
         ":shared_pointer_system",
         ":sine",
+        ":subvector_pass_through",
         ":symbolic_vector_system",
         ":trajectory_affine_system",
         ":trajectory_linear_system",
@@ -390,6 +391,18 @@ drake_cc_library(
     name = "sine",
     srcs = ["sine.cc"],
     hdrs = ["sine.h"],
+    deps = [
+        "//systems/framework",
+    ],
+)
+
+drake_cc_library(
+    name = "subvector_pass_through",
+    srcs = ["subvector_pass_through.cc"],
+    hdrs = [
+        "subvector_pass_through.h",
+        "subvector_pass_through-inl.h",
+    ],
     deps = [
         "//systems/framework",
     ],
