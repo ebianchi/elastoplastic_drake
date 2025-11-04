@@ -9,6 +9,7 @@
 #include "drake/examples/multibody/deformable/mpm_points_sender.h"
 #include "drake/examples/multibody/deformable/parameters/elastoplastic_lcm_params.h"
 #include "drake/examples/multibody/deformable/parameters/elastoplastic_sim_params.h"
+#include "drake/examples/multibody/deformable/parameters/mpm_params.h"
 #include "drake/examples/multibody/deformable/robot_lcm_systems.h"
 #include "drake/geometry/drake_visualizer.h"
 #include "drake/geometry/meshcat.h"
@@ -84,20 +85,25 @@ static const std::string kHandModel =
 static const double kDoughRadius = 0.03;
 static const std::string kDiagramFolder =
     "/mnt/data0/bibit/diagrams/mpm_drake/";
+static const std::string kRelativeParamFolder =
+    "drake/examples/multibody/deformable/parameters/";
 
 int DoMain() {
   // int DoMain(int argc, char* argv[]) {
   // Load parameters.
   ElastoPlasticSimParams sim_params =
       drake::yaml::LoadYamlFile<ElastoPlasticSimParams>(
-          drake::FindResource("drake/examples/multibody/deformable/parameters/"
+          drake::FindResource(kRelativeParamFolder +
                               "elastoplastic_sim_params.yaml")
               .get_absolute_path_or_throw());
   ElastoPlasticLCMChannels lcm_channel_params =
       drake::yaml::LoadYamlFile<ElastoPlasticLCMChannels>(
-          drake::FindResource("drake/examples/multibody/deformable/parameters/"
+          drake::FindResource(kRelativeParamFolder +
                               "elastoplastic_lcm_params.yaml")
               .get_absolute_path_or_throw());
+  MPMParams mpm_params = drake::yaml::LoadYamlFile<MPMParams>(
+      drake::FindResource(kRelativeParamFolder + "mpm_params.yaml")
+          .get_absolute_path_or_throw());
 
   systems::DiagramBuilder<double> builder;
 
@@ -110,8 +116,9 @@ int DoMain() {
 
   // Set some contact properties.
   ProximityProperties compliant_hydro_props;
-  const CoulombFriction<double> surface_friction(1.0, 1.0);
-  AddContactMaterial(sim_params.damping, {}, surface_friction,
+  const CoulombFriction<double> surface_friction(
+      mpm_params.contact_friction_mu, mpm_params.contact_friction_mu);
+  AddContactMaterial(mpm_params.contact_damping, {}, surface_friction,
                      &compliant_hydro_props);
   AddCompliantHydroelasticProperties(0.01, 1e6, &compliant_hydro_props);
 
@@ -138,24 +145,24 @@ int DoMain() {
       {sim_params.q_init_object[4] + kDoughRadius,
        sim_params.q_init_object[5] + kDoughRadius,
        sim_params.q_init_object[6] + kDoughRadius},
-      sim_params.ppc, 1.0 / 64.0);
+      mpm_params.points_per_cell, mpm_params.cell_side_length);
 
   MpmConfigParams mpm_config;
-  mpm_config.domain_bits = 6;
-  mpm_config.grid_block_spacing = 1.152;
-  mpm_config.youngs_modules = 2e4;
-  mpm_config.poisson_ratio = 0.4;
-  mpm_config.particle_yield_stress = 1e3;
-  mpm_config.particle_plasticity = true;
-  mpm_config.particle_linear_corotated = false;
-  mpm_config.density = 1000.0;
-  mpm_config.rpic_damping = 0.2;
+  mpm_config.domain_bits = mpm_params.domain_bits;
+  mpm_config.grid_block_spacing = mpm_params.grid_block_spacing;
+  mpm_config.youngs_modules = mpm_params.youngs_modulus;
+  mpm_config.poisson_ratio = mpm_params.poisson_ratio;
+  mpm_config.particle_yield_stress = mpm_params.particle_yield_stress;
+  mpm_config.particle_plasticity = mpm_params.particle_plasticity;
+  mpm_config.particle_linear_corotated = mpm_params.particle_linear_corotated;
+  mpm_config.density = mpm_params.density;
+  mpm_config.rpic_damping = mpm_params.rpic_damping;
 
-  mpm_config.substep_dt = sim_params.substep;
+  mpm_config.substep_dt = sim_params.mpm_substep;
   mpm_config.write_files = FLAGS_write_files;
-  mpm_config.contact_stiffness = sim_params.stiffness;
-  mpm_config.contact_damping = sim_params.damping;
-  mpm_config.contact_friction_mu = sim_params.friction;
+  mpm_config.contact_stiffness = mpm_params.contact_stiffness;
+  mpm_config.contact_damping = mpm_params.contact_damping;
+  mpm_config.contact_friction_mu = mpm_params.contact_friction_mu;
   // Seems to be a boundary condition.  111 fixes the bottom z height.
   // mpm_config.mpm_bc = 111;
   deformable_model.SetMpmConfig(std::move(mpm_config));

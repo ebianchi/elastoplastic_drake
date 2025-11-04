@@ -479,6 +479,7 @@ drake_cc_binary(
         "//examples/multibody/deformable:robot_lcm_systems",
         "//examples/multibody/deformable/parameters:elastoplastic_sim_params",
         "//examples/multibody/deformable/parameters:elastoplastic_lcm_params",
+        "//examples/multibody/deformable/parameters:mpm_params",
         "//geometry:drake_visualizer",
         "//geometry:scene_graph",
         "//lcm",

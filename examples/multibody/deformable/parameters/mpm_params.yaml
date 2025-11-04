@@ -1,0 +1,21 @@
+# Note:  Another important MPM parameter is the substepping dt, which is set in
+# elastoplastic_sim_params.yaml as mpm_substep since it's tightly coupled with
+# the simulation time step dt.
+
+domain_bits: 6
+grid_block_spacing: 1.152
+youngs_modulus: 2e4
+poisson_ratio: 0.4
+particle_yield_stress: 1e3
+particle_plasticity: true
+particle_linear_corotated: false
+density: 1000.0
+rpic_damping: 0.2
+
+contact_stiffness: 1000.0
+contact_damping: 1.0        # Hunt and Crossley damping for the deformable body,
+                            # only used when 'contact_approximation' is set to
+                            # 'lagged' or 'similar' [s/m]
+contact_friction_mu: 1.0
+points_per_cell: 3
+cell_side_length: 0.016

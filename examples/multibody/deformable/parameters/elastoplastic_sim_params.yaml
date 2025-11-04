@@ -7,18 +7,10 @@ visualize_drake_sim: false
 publish_efforts: true
 
 dt: 0.01
+mpm_substep: 0.001      # discrete time step for MPM substepping scheme [s]
 realtime_rate: 1
 
 fixed_base_robot: [0.5, -0.5, -0.5, -0.5, 0.2, 0.2, 0.2]
 fixed_base_robot_frame: "hand_root"
 q_init_robot: [2.191, 1.1, -1.33, -2.22, 1.30, 2.02, 0.08]
 q_init_object: [1, 0, 0, 0, 0.2, 0.3, 0.35]
-
-# MPM properties
-damping: 1.0        # Hunt and Crossley damping for the deformable body, only
-                    # used when 'contact_approximation' is set to 'lagged' or
-                    # 'similar' [s/m]
-stiffness: 1000.0   # contact stiffness
-friction: 1.0       # contact friction
-substep: 0.001      # discrete time step for the substepping scheme [s]
-ppc: 3              # particles per cell

@@ -18,6 +18,15 @@ drake_cc_library(
     visibility = ["//visibility:public"],
 )
 
+drake_cc_library(
+    name = "mpm_params",
+    hdrs = ["mpm_params.h"],
+    deps = [
+        "//common/yaml:yaml",
+    ],
+    visibility = ["//visibility:public"],
+)
+
 filegroup(
     name = "yamls",
     srcs = glob(["*.yaml"]),
