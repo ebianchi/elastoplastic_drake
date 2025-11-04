@@ -331,6 +331,9 @@ MultibodyPlant<T>::MultibodyPlant(
   visual_geometries_.emplace_back();  // Entries for the "world" body.
   collision_geometries_.emplace_back();
 
+  // Add a deformable model to the plant by default.  Geometries need to be
+  // registered to this model for it to partake in the dynamics, but the "model"
+  // exists by default.
   AddDeformableModel();
   DeclareSceneGraphPorts();
 }

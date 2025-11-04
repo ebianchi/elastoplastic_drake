@@ -6,6 +6,7 @@
 
 #include "drake/common/find_resource.h"
 #include "drake/common/yaml/yaml_io.h"
+#include "drake/examples/multibody/deformable/mpm_points_sender.h"
 #include "drake/examples/multibody/deformable/parameters/elastoplastic_lcm_params.h"
 #include "drake/examples/multibody/deformable/parameters/elastoplastic_sim_params.h"
 #include "drake/examples/multibody/deformable/robot_lcm_systems.h"
@@ -27,6 +28,7 @@
 #include "drake/systems/framework/diagram_builder.h"
 #include "drake/systems/framework/leaf_system.h"
 #include "drake/systems/lcm/lcm_interface_system.h"
+#include "drake/systems/lcm/lcm_publisher_system.h"
 #include "drake/systems/primitives/subvector_pass_through.h"
 #include "drake/visualization/visualization_config.h"
 #include "drake/visualization/visualization_config_functions.h"
@@ -60,6 +62,9 @@ using drake::multibody::gmpm::MpmConfigParams;
 using drake::systems::AddActuationRecieverAndStateSenderLcm;
 using drake::systems::BasicVector;
 using drake::systems::Context;
+using drake::systems::TriggerType;
+using drake::systems::TriggerTypeSet;
+using drake::systems::lcm::LcmPublisherSystem;
 using Eigen::Matrix2d;
 using Eigen::Matrix3d;
 using Eigen::MatrixXd;
@@ -165,6 +170,18 @@ int DoMain() {
       &builder, plant, lcm, lcm_channel_params.robot_input_channel,
       lcm_channel_params.robot_state_channel, sim_params.robot_publish_rate,
       hand_index, sim_params.publish_efforts, sim_params.actuator_delay);
+  auto particle_positions_sender =
+      builder.AddSystem<drake::systems::MPMPointsSender>(
+          "particle_positions_sender");
+  auto particle_positions_publisher =
+      builder.AddSystem(LcmPublisherSystem::Make<drake::lcmt_material_points>(
+          lcm_channel_params.mpm_channel, lcm,
+          1.0 / sim_params.object_publish_rate));
+  builder.Connect(
+      plant.get_output_port(plant.deformable_model().mpm_output_port_index()),
+      particle_positions_sender->get_input_port_mpm());
+  builder.Connect(particle_positions_sender->get_output_port_particles(),
+                  particle_positions_publisher->get_input_port());
 
   // meshcat viz
   auto meshcat = std::make_shared<geometry::Meshcat>();

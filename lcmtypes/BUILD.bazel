@@ -197,6 +197,14 @@ drake_lcm_cc_library(
 )
 
 drake_lcm_cc_library(
+    name = "lcmt_mpm",
+    lcm_package = "drake",
+    lcm_srcs = [
+        "lcmt_material_points.lcm",
+    ],
+)
+
+drake_lcm_cc_library(
     name = "robot_plan",
     lcm_package = "drake",
     lcm_srcs = [

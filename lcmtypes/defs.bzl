@@ -28,6 +28,7 @@ ALL_LCM_SRCS = [
     "lcmt_jaco_status.lcm",
     "lcmt_panda_command.lcm",
     "lcmt_panda_status.lcm",
+    "lcmt_material_points.lcm",
     "lcmt_planar_gripper_command.lcm",
     "lcmt_planar_gripper_finger_command.lcm",
     "lcmt_planar_gripper_finger_face_assignment.lcm",

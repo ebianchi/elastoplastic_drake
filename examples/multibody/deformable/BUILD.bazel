@@ -78,6 +78,24 @@ drake_cc_library(
     ],
 )
 
+drake_cc_library(
+    name = "mpm_points_sender",
+    srcs = [
+        "mpm_points_sender.cc",
+    ],
+    hdrs = [
+        "mpm_points_sender.h",
+    ],
+    deps = [
+        "//common:find_resource",
+        "//lcmtypes:lcmt_mpm",
+        "//multibody/plant",
+        "//multibody/gpu_mpm:cuda_mpm",
+        "//systems/framework:leaf_system",
+        "@drake//:drake_shared_library",
+    ],
+)
+
 drake_cc_binary(
     name = "deformable_torus",
     srcs = [
@@ -457,21 +475,23 @@ drake_cc_binary(
         "-realtime_rate=0.0",
     ],
     deps = [
+        "//examples/multibody/deformable:mpm_points_sender",
+        "//examples/multibody/deformable:robot_lcm_systems",
+        "//examples/multibody/deformable/parameters:elastoplastic_sim_params",
+        "//examples/multibody/deformable/parameters:elastoplastic_lcm_params",
         "//geometry:drake_visualizer",
         "//geometry:scene_graph",
+        "//lcm",
+        "//lcmtypes:lcmt_mpm",
+        "//multibody/gpu_mpm:cuda_mpm",
         "//multibody/parsing",
         "//multibody/plant",
         "//systems/analysis:simulator",
         "//systems/framework:diagram",
         "//systems/lcm",
-        "//lcm",
-        "@gflags",
-        "//examples/multibody/deformable:robot_lcm_systems",
         "//systems/primitives:subvector_pass_through",
-        "//geometry",
         "//visualization",
-        "//examples/multibody/deformable/parameters:elastoplastic_sim_params",
-        "//examples/multibody/deformable/parameters:elastoplastic_lcm_params",
+        "@gflags",
     ],
 )
 

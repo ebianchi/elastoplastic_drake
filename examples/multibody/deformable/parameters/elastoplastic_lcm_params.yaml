@@ -2,6 +2,7 @@
 
 robot_state_channel: ALLEGRO_STATE_SIMULATION             # lcmt_robot_output
 robot_input_channel: ALLEGRO_INPUT                        # lcmt_robot_input
+mpm_channel: MPM_POINT_POSITIONS                          # lcmt_material_points
 
 osc_channel: OSC_ALLEGRO                                  # lcmt_robot_input
 osc_debug_channel: OSC_DEBUG_ALLEGRO                      # lcmt_osc_output

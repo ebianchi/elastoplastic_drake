@@ -5,6 +5,7 @@
 struct ElastoPlasticLCMChannels {
   std::string robot_state_channel;
   std::string robot_input_channel;
+  std::string mpm_channel;
 
   std::string osc_channel;
   std::string osc_debug_channel;
@@ -28,6 +29,7 @@ struct ElastoPlasticLCMChannels {
   void Serialize(Archive* a) {
     a->Visit(DRAKE_NVP(robot_state_channel));
     a->Visit(DRAKE_NVP(robot_input_channel));
+    a->Visit(DRAKE_NVP(mpm_channel));
 
     a->Visit(DRAKE_NVP(osc_channel));
     a->Visit(DRAKE_NVP(osc_debug_channel));
@@ -40,7 +42,7 @@ struct ElastoPlasticLCMChannels {
     a->Visit(DRAKE_NVP(c3_final_target_state_channel));
     a->Visit(DRAKE_NVP(c3_target_state_channel));
     a->Visit(DRAKE_NVP(c3_actual_state_channel));
-    
+
     a->Visit(DRAKE_NVP(dynamically_feasible_actor_plan_channel));
     a->Visit(DRAKE_NVP(dynamically_feasible_plan_channel));
 
