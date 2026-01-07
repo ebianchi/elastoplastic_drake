@@ -35,7 +35,7 @@
 #include "drake/visualization/visualization_config_functions.h"
 
 DEFINE_bool(write_files, true, "Enable dumping MPM data to files.");
-DEFINE_double(simulation_time, 10.0, "Desired duration of the simulation [s].");
+DEFINE_double(simulation_time, 1.5, "Desired duration of the simulation [s].");
 DEFINE_int32(testcase, 0, "Test Case.");
 DEFINE_string(lcm_url, "udpm://239.255.76.67:7667?ttl=0",
               "LCM URL with IP, port, and TTL settings");
@@ -79,12 +79,9 @@ namespace drake {
 namespace examples {
 namespace {
 
-static const std::string kHandModel =
-    "package://drake_models/allegro_hand_description/urdf/"
-    "allegro_hand_description_right.urdf";
-static const double kDoughRadius = 0.03;
 static const std::string kDiagramFolder =
     "/mnt/data0/bibit/diagrams/mpm_drake/";
+static const std::string kHtmlFolder = "/mnt/data0/bibit/mpm_drake/recordings/";
 static const std::string kRelativeParamFolder =
     "drake/examples/multibody/deformable/parameters/";
 
@@ -122,29 +119,35 @@ int DoMain() {
                      &compliant_hydro_props);
   AddCompliantHydroelasticProperties(0.01, 1e6, &compliant_hydro_props);
 
-  // Add the hand.
+  // Add a ground.
   Parser parser(&plant, &scene_graph);
-  ModelInstanceIndex hand_index = parser.AddModelsFromUrl(kHandModel)[0];
-  Quaterniond hand_quat = {
+  parser.AddModels(sim_params.ground_model);
+  plant.WeldFrames(plant.world_frame(), plant.GetFrameByName("ground"));
+
+  // Add the robot.
+  ModelInstanceIndex robot_index =
+      //   parser.AddModelsFromUrl(sim_params.robot_model)[0];
+      parser.AddModels(sim_params.robot_model)[0];
+  Quaterniond robot_quat = {
       sim_params.fixed_base_robot[0], sim_params.fixed_base_robot[1],
       sim_params.fixed_base_robot[2], sim_params.fixed_base_robot[3]};
-  Vector3d hand_pos = {sim_params.fixed_base_robot[4],
-                       sim_params.fixed_base_robot[5],
-                       sim_params.fixed_base_robot[6]};
-  RigidTransformd X_WH = RigidTransformd(hand_quat, hand_pos);
+  Vector3d robot_pos = {sim_params.fixed_base_robot[4],
+                        sim_params.fixed_base_robot[5],
+                        sim_params.fixed_base_robot[6]};
+  RigidTransformd X_WR = RigidTransformd(robot_quat, robot_pos);
   plant.WeldFrames(plant.world_frame(),
                    plant.GetFrameByName(sim_params.fixed_base_robot_frame),
-                   X_WH);
+                   X_WR);
 
   // mpm stuff
   DeformableModel<double>& deformable_model = plant.mutable_deformable_model();
   deformable_model.RegisterMpmParticle(
-      {sim_params.q_init_object[4] - kDoughRadius,
-       sim_params.q_init_object[5] - kDoughRadius,
-       sim_params.q_init_object[6] - kDoughRadius},
-      {sim_params.q_init_object[4] + kDoughRadius,
-       sim_params.q_init_object[5] + kDoughRadius,
-       sim_params.q_init_object[6] + kDoughRadius},
+      {sim_params.q_init_object[4] - sim_params.object_half_widths[0],
+       sim_params.q_init_object[5] - sim_params.object_half_widths[1],
+       sim_params.q_init_object[6] - sim_params.object_half_widths[2]},
+      {sim_params.q_init_object[4] + sim_params.object_half_widths[0],
+       sim_params.q_init_object[5] + sim_params.object_half_widths[1],
+       sim_params.q_init_object[6] + sim_params.object_half_widths[2]},
       mpm_params.points_per_cell, mpm_params.cell_side_length);
 
   MpmConfigParams mpm_config;
@@ -176,7 +179,7 @@ int DoMain() {
   AddActuationRecieverAndStateSenderLcm(
       &builder, plant, lcm, lcm_channel_params.robot_input_channel,
       lcm_channel_params.robot_state_channel, sim_params.robot_publish_rate,
-      hand_index, sim_params.publish_efforts, sim_params.actuator_delay);
+      robot_index, sim_params.publish_efforts, sim_params.actuator_delay);
   auto particle_positions_sender =
       builder.AddSystem<drake::systems::MPMPointsSender>(
           "particle_positions_sender");
@@ -192,6 +195,7 @@ int DoMain() {
 
   // meshcat viz
   auto meshcat = std::make_shared<geometry::Meshcat>();
+  meshcat->SetCameraPose(sim_params.camera_pose, sim_params.camera_target);
   if (FLAGS_write_files) {
     auto meshcat_params = drake::geometry::MeshcatVisualizerParams();
     meshcat_params.show_mpm =
@@ -231,17 +235,9 @@ int DoMain() {
   /* Build the simulator and run! */
   systems::Simulator<double> simulator(*diagram, std::move(diagram_context));
 
-  //   auto& mutable_context = simulator.get_mutable_context();
-  //   auto& plant_context =
-  //   plant.GetMyMutableContextFromRoot(&mutable_context);
-
-  // plant.SetPositions(&plant_context, left_iiwa,
-  // left_iiwa_initial_joint_values); plant.SetPositions(&plant_context,
-  // right_iiwa,
-  //                    right_iiwa_initial_joint_values);
-  // plant.SetPositions(&plant_context, left_wsg, Eigen::Vector2d(-0.03, 0.03));
-  // plant.SetPositions(&plant_context, right_wsg, Eigen::Vector2d(-0.03,
-  // 0.03));
+  auto& mutable_context = simulator.get_mutable_context();
+  auto& plant_context = plant.GetMyMutableContextFromRoot(&mutable_context);
+  plant.SetPositions(&plant_context, robot_index, sim_params.q_init_robot);
 
   simulator.Initialize();
   simulator.set_target_realtime_rate(sim_params.realtime_rate);
@@ -251,7 +247,7 @@ int DoMain() {
     simulator.AdvanceTo(FLAGS_simulation_time);
     meshcat->StopRecording();
     meshcat->PublishRecording();
-    std::ofstream htmlFile("/home/bibit/drake/elastoplastic.html");
+    std::ofstream htmlFile(kHtmlFolder + "elastoplastic.html");
     htmlFile << meshcat->StaticHtml();
     htmlFile.close();
   } else {

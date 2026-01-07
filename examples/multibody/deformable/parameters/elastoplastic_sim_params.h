@@ -5,7 +5,8 @@
 #include "drake/common/yaml/yaml_read_archive.h"
 
 struct ElastoPlasticSimParams {
-  std::string object_model;
+  std::string ground_model;
+  std::string robot_model;
   double robot_publish_rate;
   double object_publish_rate;
   double actuator_delay;
@@ -18,10 +19,14 @@ struct ElastoPlasticSimParams {
   std::string fixed_base_robot_frame;
   Eigen::VectorXd q_init_robot;
   Eigen::VectorXd q_init_object;
+  Eigen::Vector3d object_half_widths;
+  Eigen::Vector3d camera_pose;
+  Eigen::Vector3d camera_target;
 
   template <typename Archive>
   void Serialize(Archive* a) {
-    a->Visit(DRAKE_NVP(object_model));
+    a->Visit(DRAKE_NVP(ground_model));
+    a->Visit(DRAKE_NVP(robot_model));
     a->Visit(DRAKE_NVP(robot_publish_rate));
     a->Visit(DRAKE_NVP(object_publish_rate));
     a->Visit(DRAKE_NVP(actuator_delay));
@@ -34,5 +39,8 @@ struct ElastoPlasticSimParams {
     a->Visit(DRAKE_NVP(fixed_base_robot_frame));
     a->Visit(DRAKE_NVP(q_init_robot));
     a->Visit(DRAKE_NVP(q_init_object));
+    a->Visit(DRAKE_NVP(object_half_widths));
+    a->Visit(DRAKE_NVP(camera_pose));
+    a->Visit(DRAKE_NVP(camera_target));
   }
 };

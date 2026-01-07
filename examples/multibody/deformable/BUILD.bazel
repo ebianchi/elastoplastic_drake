@@ -469,6 +469,7 @@ drake_cc_binary(
     data = [
         "@drake_models//:allegro_hand_description",
         "//examples/multibody/deformable/parameters:yamls",
+        ":models",
     ],
     test_rule_args = [
         "-simulation_time=0.1",
