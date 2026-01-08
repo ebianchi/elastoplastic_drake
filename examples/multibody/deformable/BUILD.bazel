@@ -19,7 +19,7 @@ filegroup(
     srcs = glob(["models/**"]) + [
         "@drake_models//:wsg_50_description",
     ],
-    visibility = ["//:__pkg__"],
+    visibility = ["//visibility:public"],
 )
 
 drake_cc_library(
@@ -468,6 +468,7 @@ drake_cc_binary(
     add_test_rule = 1,
     data = [
         "@drake_models//:allegro_hand_description",
+        "@drake_models//:franka_description",
         "//examples/multibody/deformable/parameters:yamls",
         ":models",
     ],
@@ -478,6 +479,7 @@ drake_cc_binary(
     deps = [
         "//examples/multibody/deformable:mpm_points_sender",
         "//examples/multibody/deformable:robot_lcm_systems",
+        "//examples/multibody/deformable/helpers:deform_sim_utils",
         "//examples/multibody/deformable/parameters:elastoplastic_sim_params",
         "//examples/multibody/deformable/parameters:elastoplastic_lcm_params",
         "//examples/multibody/deformable/parameters:mpm_params",

@@ -1,0 +1,18 @@
+load("//tools/skylark:drake_cc.bzl", "drake_cc_library")
+
+drake_cc_library(
+    name = "deform_sim_utils",
+    srcs = ["deform_sim_utils.cc"],
+    hdrs = ["deform_sim_utils.h"],
+    deps = [
+        "//common",
+        "@drake//:drake_shared_library",
+        "//multibody/gpu_mpm:cuda_mpm",
+        "//examples/multibody/deformable/parameters:elastoplastic_sim_params",
+        "//examples/multibody/deformable/parameters:mpm_params",
+    ],
+    data = [
+        "//examples/multibody/deformable:models",
+    ],
+    visibility = ["//visibility:public"],
+)

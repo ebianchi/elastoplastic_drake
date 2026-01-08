@@ -2,7 +2,7 @@
 
 #include "drake/common/yaml/yaml_read_archive.h"
 
-struct MPMParams {
+struct MpmParams {
   int domain_bits;
   double grid_block_spacing;
   double youngs_modulus;

@@ -22,6 +22,7 @@ struct ElastoPlasticSimParams {
   Eigen::Vector3d object_half_widths;
   Eigen::Vector3d camera_pose;
   Eigen::Vector3d camera_target;
+  bool use_franka;
 
   template <typename Archive>
   void Serialize(Archive* a) {
@@ -42,5 +43,6 @@ struct ElastoPlasticSimParams {
     a->Visit(DRAKE_NVP(object_half_widths));
     a->Visit(DRAKE_NVP(camera_pose));
     a->Visit(DRAKE_NVP(camera_target));
+    a->Visit(DRAKE_NVP(use_franka));
   }
 };

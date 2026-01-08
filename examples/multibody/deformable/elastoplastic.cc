@@ -6,6 +6,7 @@
 
 #include "drake/common/find_resource.h"
 #include "drake/common/yaml/yaml_io.h"
+#include "drake/examples/multibody/deformable/helpers/deform_sim_utils.h"
 #include "drake/examples/multibody/deformable/mpm_points_sender.h"
 #include "drake/examples/multibody/deformable/parameters/elastoplastic_lcm_params.h"
 #include "drake/examples/multibody/deformable/parameters/elastoplastic_sim_params.h"
@@ -41,52 +42,25 @@ DEFINE_string(lcm_url, "udpm://239.255.76.67:7667?ttl=0",
               "LCM URL with IP, port, and TTL settings");
 
 using drake::geometry::AddContactMaterial;
-using drake::geometry::Box;
-using drake::geometry::GeometryInstance;
-using drake::geometry::IllustrationProperties;
 using drake::geometry::ProximityProperties;
 using drake::math::RigidTransformd;
-using drake::math::RotationMatrix;
 using drake::multibody::AddMultibodyPlant;
-using drake::multibody::Body;
 using drake::multibody::CoulombFriction;
-using drake::multibody::DeformableBodyId;
-using drake::multibody::DeformableModel;
 using drake::multibody::ModelInstanceIndex;
 using drake::multibody::MultibodyPlant;
 using drake::multibody::MultibodyPlantConfig;
-using drake::multibody::PackageMap;
 using drake::multibody::Parser;
-using drake::multibody::RigidBody;
-using drake::multibody::SpatialInertia;
-using drake::multibody::gmpm::MpmConfigParams;
 using drake::systems::AddActuationRecieverAndStateSenderLcm;
-using drake::systems::BasicVector;
 using drake::systems::Context;
-using drake::systems::TriggerType;
-using drake::systems::TriggerTypeSet;
 using drake::systems::lcm::LcmPublisherSystem;
-using Eigen::Matrix2d;
-using Eigen::Matrix3d;
-using Eigen::MatrixXd;
 using Eigen::Quaterniond;
-using Eigen::Vector2d;
 using Eigen::Vector3d;
-using Eigen::Vector4d;
-using Eigen::VectorXd;
 
 namespace drake {
 namespace examples {
-namespace {
-
-static const std::string kDiagramFolder =
-    "/mnt/data0/bibit/diagrams/mpm_drake/";
-static const std::string kHtmlFolder = "/mnt/data0/bibit/mpm_drake/recordings/";
-static const std::string kRelativeParamFolder =
-    "drake/examples/multibody/deformable/parameters/";
+namespace deformable {
 
 int DoMain() {
-  // int DoMain(int argc, char* argv[]) {
   // Load parameters.
   ElastoPlasticSimParams sim_params =
       drake::yaml::LoadYamlFile<ElastoPlasticSimParams>(
@@ -98,10 +72,11 @@ int DoMain() {
           drake::FindResource(kRelativeParamFolder +
                               "elastoplastic_lcm_params.yaml")
               .get_absolute_path_or_throw());
-  MPMParams mpm_params = drake::yaml::LoadYamlFile<MPMParams>(
+  MpmParams mpm_params = drake::yaml::LoadYamlFile<MpmParams>(
       drake::FindResource(kRelativeParamFolder + "mpm_params.yaml")
           .get_absolute_path_or_throw());
 
+  // Put together the diagram.
   systems::DiagramBuilder<double> builder;
 
   MultibodyPlantConfig plant_config;
@@ -110,69 +85,22 @@ int DoMain() {
 
   // Build the simulation plant.
   auto [plant, scene_graph] = AddMultibodyPlant(plant_config, &builder);
-
-  // Set some contact properties.
-  ProximityProperties compliant_hydro_props;
-  const CoulombFriction<double> surface_friction(
-      mpm_params.contact_friction_mu, mpm_params.contact_friction_mu);
-  AddContactMaterial(mpm_params.contact_damping, {}, surface_friction,
-                     &compliant_hydro_props);
-  AddCompliantHydroelasticProperties(0.01, 1e6, &compliant_hydro_props);
-
-  // Add a ground.
   Parser parser(&plant, &scene_graph);
-  parser.AddModels(sim_params.ground_model);
-  plant.WeldFrames(plant.world_frame(), plant.GetFrameByName("ground"));
 
-  // Add the robot.
-  ModelInstanceIndex robot_index =
-      //   parser.AddModelsFromUrl(sim_params.robot_model)[0];
-      parser.AddModels(sim_params.robot_model)[0];
-  Quaterniond robot_quat = {
-      sim_params.fixed_base_robot[0], sim_params.fixed_base_robot[1],
-      sim_params.fixed_base_robot[2], sim_params.fixed_base_robot[3]};
-  Vector3d robot_pos = {sim_params.fixed_base_robot[4],
-                        sim_params.fixed_base_robot[5],
-                        sim_params.fixed_base_robot[6]};
-  RigidTransformd X_WR = RigidTransformd(robot_quat, robot_pos);
-  plant.WeldFrames(plant.world_frame(),
-                   plant.GetFrameByName(sim_params.fixed_base_robot_frame),
-                   X_WR);
+  // Add the robot and environment.
+  ModelInstanceIndex robot_index;
+  if (sim_params.use_franka) {
+    robot_index = AddFrankaToPlant(&plant, &scene_graph, true, true, true);
+  } else {
+    robot_index = AddGenericRobotToPlant(&plant, &scene_graph, sim_params);
+  }
 
-  // mpm stuff
-  DeformableModel<double>& deformable_model = plant.mutable_deformable_model();
-  deformable_model.RegisterMpmParticle(
-      {sim_params.q_init_object[4] - sim_params.object_half_widths[0],
-       sim_params.q_init_object[5] - sim_params.object_half_widths[1],
-       sim_params.q_init_object[6] - sim_params.object_half_widths[2]},
-      {sim_params.q_init_object[4] + sim_params.object_half_widths[0],
-       sim_params.q_init_object[5] + sim_params.object_half_widths[1],
-       sim_params.q_init_object[6] + sim_params.object_half_widths[2]},
-      mpm_params.points_per_cell, mpm_params.cell_side_length);
-
-  MpmConfigParams mpm_config;
-  mpm_config.domain_bits = mpm_params.domain_bits;
-  mpm_config.grid_block_spacing = mpm_params.grid_block_spacing;
-  mpm_config.youngs_modules = mpm_params.youngs_modulus;
-  mpm_config.poisson_ratio = mpm_params.poisson_ratio;
-  mpm_config.particle_yield_stress = mpm_params.particle_yield_stress;
-  mpm_config.particle_plasticity = mpm_params.particle_plasticity;
-  mpm_config.particle_linear_corotated = mpm_params.particle_linear_corotated;
-  mpm_config.density = mpm_params.density;
-  mpm_config.rpic_damping = mpm_params.rpic_damping;
-
-  mpm_config.substep_dt = sim_params.mpm_substep;
-  mpm_config.write_files = FLAGS_write_files;
-  mpm_config.contact_stiffness = mpm_params.contact_stiffness;
-  mpm_config.contact_damping = mpm_params.contact_damping;
-  mpm_config.contact_friction_mu = mpm_params.contact_friction_mu;
-  // Seems to be a boundary condition.  111 fixes the bottom z height.
-  // mpm_config.mpm_bc = 111;
-  deformable_model.SetMpmConfig(std::move(mpm_config));
+  // Add the object (dough) as an MPM entity.
+  AddMpmBlockToPlant(&plant, mpm_params, sim_params, FLAGS_write_files);
 
   plant.Finalize();
 
-  // Publishing
+  // Set up LCM communication systems.
   drake::lcm::DrakeLcm drake_lcm(FLAGS_lcm_url);
   auto lcm =
       builder.AddSystem<drake::systems::lcm::LcmInterfaceSystem>(&drake_lcm);
@@ -193,7 +121,7 @@ int DoMain() {
   builder.Connect(particle_positions_sender->get_output_port_particles(),
                   particle_positions_publisher->get_input_port());
 
-  // meshcat viz
+  // Visualize with meshcat.
   auto meshcat = std::make_shared<geometry::Meshcat>();
   meshcat->SetCameraPose(sim_params.camera_pose, sim_params.camera_target);
   if (FLAGS_write_files) {
@@ -232,12 +160,15 @@ int DoMain() {
   cmd = "rm " + path;
   std::ignore = std::system(cmd.c_str());
 
-  /* Build the simulator and run! */
+  // Set up the simulator.
   systems::Simulator<double> simulator(*diagram, std::move(diagram_context));
 
+  // Start with the robot at the initial position.
   auto& mutable_context = simulator.get_mutable_context();
   auto& plant_context = plant.GetMyMutableContextFromRoot(&mutable_context);
-  plant.SetPositions(&plant_context, robot_index, sim_params.q_init_robot);
+  Eigen::VectorXd q_init_robot =
+      sim_params.use_franka ? kQInitFranka : sim_params.q_init_robot;
+  plant.SetPositions(&plant_context, robot_index, q_init_robot);
 
   simulator.Initialize();
   simulator.set_target_realtime_rate(sim_params.realtime_rate);
@@ -257,13 +188,10 @@ int DoMain() {
   return 0;
 }
 
-}  // namespace
+}  // namespace deformable
 }  // namespace examples
 }  // namespace drake
 
 int main() {
-  drake::examples::DoMain();
+  drake::examples::deformable::DoMain();
 }
-// int main(int argc, char* argv[]) {
-//   drake::examples::DoMain(argc, argv);
-// }

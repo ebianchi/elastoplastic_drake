@@ -13,7 +13,10 @@ actuator_delay: 0.000
 robot_model: examples/multibody/deformable/models/ee_flat.urdf
 fixed_base_robot: [1, 0, 0, 0, 0, 0, 0]
 fixed_base_robot_frame: "base_link"
-q_init_robot: [0.2, 0.25, 0.25]
+q_init_robot: [0.35, 0.25, 0.25]
+
+# Robot option 3:  Overrule any robot model settings and use Franka defaults.
+use_franka: true
 
 visualize_drake_sim: false
 publish_efforts: true
@@ -22,7 +25,7 @@ dt: 0.01
 mpm_substep: 0.001      # discrete time step for MPM substepping scheme [s]
 realtime_rate: 1
 
-q_init_object: [1, 0, 0, 0, 0.2, 0.3, 0.15]
+q_init_object: [1, 0, 0, 0, 0.38, 0.25, 0.15]
 object_half_widths: [0.03, 0.03, 0.03]
 
 camera_pose: [0.4, -0.1, 0.3]
