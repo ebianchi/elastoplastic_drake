@@ -173,17 +173,20 @@ int DoMain() {
   simulator.Initialize();
   simulator.set_target_realtime_rate(sim_params.realtime_rate);
 
-  if (FLAGS_write_files) {
-    meshcat->StartRecording();
-    simulator.AdvanceTo(FLAGS_simulation_time);
-    meshcat->StopRecording();
-    meshcat->PublishRecording();
-    std::ofstream htmlFile(kHtmlFolder + "elastoplastic.html");
-    htmlFile << meshcat->StaticHtml();
-    htmlFile.close();
-  } else {
-    simulator.AdvanceTo(FLAGS_simulation_time);
-  }
+  //   if (FLAGS_write_files) {
+  //     meshcat->StartRecording();
+  //     simulator.AdvanceTo(FLAGS_simulation_time);
+  //     meshcat->StopRecording();
+  //     meshcat->PublishRecording();
+  //     std::ofstream htmlFile(kHtmlFolder + "elastoplastic.html");
+  //     htmlFile << meshcat->StaticHtml();
+  //     htmlFile.close();
+  //   } else {
+  //     simulator.AdvanceTo(FLAGS_simulation_time);
+  //   }
+  // Run indefinitely for simulation purposes.  Can use the shorter cutoff time
+  // above for testing.
+  simulator.AdvanceTo(std::numeric_limits<double>::infinity());
 
   return 0;
 }
