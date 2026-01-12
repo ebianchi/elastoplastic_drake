@@ -32,7 +32,7 @@ static constexpr const char* kPlatformModel =
 static constexpr const char* kBoxModel =
     "drake/examples/multibody/deformable/models/box.urdf";
 inline const Eigen::VectorXd kQInitFranka =
-    (Eigen::VectorXd(7) << 2.19, 0.8, -1.7, -2.4, 0.95, 2.02, 0.08).finished();
+    (Eigen::VectorXd(7) << 2.2, 0.8, -1.7, -2.4, 0.93, 2.04, -0.09).finished();
 
 /// Tool attachment frame is the offset from the Panda's link7 frame to its
 /// flange where an end effector can be attached.
