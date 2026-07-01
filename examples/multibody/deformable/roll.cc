@@ -1,4 +1,6 @@
+#include <chrono>
 #include <fstream>
+#include <iostream>
 #include <memory>
 
 #include <gflags/gflags.h>
@@ -41,7 +43,8 @@ DEFINE_double(
 DEFINE_bool(visualize, true, "Enable visualizing via Meldis.");
 DEFINE_double(stiffness, 1e3, "Contact Stiffness.");
 DEFINE_double(friction, 1.0, "Contact Friction.");
-DEFINE_double(damping, 1.0,
+DEFINE_double(
+    damping, 1.0,
     "Hunt and Crossley damping for the deformable body, only used when "
     "'contact_approximation' is set to 'lagged' or 'similar' [s/m].");
 
@@ -239,6 +242,8 @@ class IiwaController : public drake::systems::LeafSystem<double> {
 };
 
 int do_main() {
+  const auto loop_start = std::chrono::steady_clock::now();
+
   systems::DiagramBuilder<double> builder;
 
   MultibodyPlantConfig plant_config;
@@ -345,7 +350,8 @@ int do_main() {
   DeformableModel<double>& deformable_model = plant.mutable_deformable_model();
   deformable_model.RegisterMpmParticle(
       {0.05 + 0.5 - 0.16, 0.0 + 0.5 - 0.06, 0.05 + 0.5 - 0.05},
-      {0.05 + 0.5 + 0.16, 0.0 + 0.5 + 0.06, 0.05 + 0.5 + 0.05}, FLAGS_ppc, 1.0 / 64.0);
+      {0.05 + 0.5 + 0.16, 0.0 + 0.5 + 0.06, 0.05 + 0.5 + 0.05}, FLAGS_ppc,
+      1.0 / 64.0);
 
   MpmConfigParams mpm_config;
   mpm_config.domain_bits = 6;
@@ -561,6 +567,9 @@ int do_main() {
   } else {
     simulator.AdvanceTo(FLAGS_simulation_time);
   }
+  const auto loop_end = std::chrono::steady_clock::now();
+  const std::chrono::duration<double> loop_seconds = loop_end - loop_start;
+  std::cout << "Main loop time: " << loop_seconds.count() << " s" << std::endl;
 
   return 0;
 }
